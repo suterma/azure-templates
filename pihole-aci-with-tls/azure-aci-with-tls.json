@@ -1,33 +1,48 @@
-  {
+{
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "storageAccounts_qryspihole_name": {
-            "defaultValue": "qryspihole2",
-            "type": "String"
+        "storageAccounts_pihole_name": {
+            "defaultValue": "pihole-storage-account",
+            "type": "String",
+            "metadata": {
+                "description": "The name of the storage account that will be created to contain the needed volumes"
+            }
         },
         "containerGroups_pihole_with_ssl_container_group_name": {
-            "defaultValue": "pihole_with_ssl_container_group2",
-            "type": "String"
+            "defaultValue": "pihole-with-ssl-container-group",
+            "type": "String",
+            "metadata": {
+                "description": "The name of the container group that will be created to contain the Pi-hole and the nginx sidecar volume"
+            }
         },
-        "pihole_dns_name_label": {
-            "defaultValue": "qryspihole2",
-            "type": "String"
+        "dnsPrefixString": {
+            "defaultValue": "pihole",
+            "type": "string",
+            "maxLength": 50,
+            "metadata": {
+                "description": "The DNS label for the public IP address. It must be lowercase. It should match the following regular expression, or it will raise an error: ^[a-z][a-z0-9-]{1,61}[a-z0-9]$"
+         }
         },
         "pihole_container_WEBPASSWORD": {
             "defaultValue": "PLEASE_CHANGE2",
-            "type": "String"
+            "type": "securestring",
+            "metadata": {
+                "description": "Password for the Pi-hole admin account. Keep note of it, you can not retrieve it later on."
+            }
         }        
     },
   "variables": {
-    "storageAccountId": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_qryspihole_name'))]"
+    "storageAccountId": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_pihole_name'))]",
+    "dnsPrefix": "[concat(parameters('dnsPrefixString'),uniquestring(resourceGroup().id))]"
 },
     "resources": [
         {
             "type": "Microsoft.Storage/storageAccounts",
             "apiVersion": "2019-04-01",
-            "name": "[parameters('storageAccounts_qryspihole_name')]",
+            "name": "[parameters('storageAccounts_pihole_name')]",
             "location": "northeurope",
+            "comments": "This storage account is used to store the Pi-hole and nginx sidecard volumes",
             "sku": {
                 "name": "Standard_LRS",
                 "tier": "Standard"
@@ -40,9 +55,9 @@
         {
             "type": "Microsoft.Storage/storageAccounts/blobServices",
             "apiVersion": "2019-04-01",
-            "name": "[concat(parameters('storageAccounts_qryspihole_name'), '/default')]",
+            "name": "[concat(parameters('storageAccounts_pihole_name'), '/default')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_qryspihole_name'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_pihole_name'))]"
             ],
             "sku": {
                 "name": "Standard_LRS",
@@ -57,9 +72,9 @@
         {
             "type": "Microsoft.Storage/storageAccounts/fileServices",
             "apiVersion": "2019-04-01",
-            "name": "[concat(parameters('storageAccounts_qryspihole_name'), '/default')]",
+            "name": "[concat(parameters('storageAccounts_pihole_name'), '/default')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_qryspihole_name'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_pihole_name'))]"
             ],
             "sku": {
                 "name": "Standard_LRS",
@@ -74,9 +89,9 @@
         {
             "type": "Microsoft.Storage/storageAccounts/queueServices",
             "apiVersion": "2019-06-01",
-            "name": "[concat(parameters('storageAccounts_qryspihole_name'), '/default')]",
+            "name": "[concat(parameters('storageAccounts_pihole_name'), '/default')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_qryspihole_name'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_pihole_name'))]"
             ],
             "properties": {
             }
@@ -86,7 +101,7 @@
             "apiVersion": "2019-06-01",
             "name": "[concat(parameters('storageAccounts_qryspihole_name'), '/default')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_qryspihole_name'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_pihole_name'))]"
             ],
             "properties": {
             }
@@ -94,10 +109,10 @@
         {
             "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
             "apiVersion": "2019-04-01",
-            "name": "[concat(parameters('storageAccounts_qryspihole_name'), '/default/etc-dnsmasq')]",
+            "name": "[concat(parameters('storageAccounts_pihole_name'), '/default/etc-dnsmasq')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts/fileServices', parameters('storageAccounts_qryspihole_name'), 'default')]",
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_qryspihole_name'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts/fileServices', parameters('storageAccounts_pihole_name'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_pihole_name'))]"
             ],
             "properties": {
                 "accessTier": "TransactionOptimized",
@@ -110,8 +125,8 @@
             "apiVersion": "2019-04-01",
             "name": "[concat(parameters('storageAccounts_qryspihole_name'), '/default/etc-pihole')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts/fileServices', parameters('storageAccounts_qryspihole_name'), 'default')]",
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_qryspihole_name'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts/fileServices', parameters('storageAccounts_pihole_name'), 'default')]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_pihole_name'))]"
             ],
             "properties": {
                 "accessTier": "TransactionOptimized",
@@ -125,7 +140,8 @@
             "name": "[parameters('containerGroups_pihole_with_ssl_container_group_name')]",
             "location": "northeurope",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_qryspihole_name'))]",                     "[resourceId('Microsoft.Storage/storageAccounts/fileServices', parameters('storageAccounts_qryspihole_name'), 'default')]"
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_pihole_name'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts/fileServices', parameters('storageAccounts_pihole_name'), 'default')]"
             ],            
             "properties": {
                 "sku": "Standard",
@@ -213,17 +229,12 @@
                             "port": 53
                         },
                         {
-                            "protocol": "UDP",
-                            "port": 67
-                        },
-                        {
                             "protocol": "TCP",
                             "port": 443
                         }
                     ],
-                    "ip": "20.67.200.231",
                     "type": "Public",
-                    "dnsNameLabel": "[parameters('pihole_dns_name_label')]"
+                    "dnsNameLabel": "[variables('dnsPrefix')]"
                 },
                 "osType": "Linux",
                 "volumes": [
@@ -232,7 +243,7 @@
                         "azureFile": {
                             "shareName": "etc-pihole",
                             "readOnly": false,
-                            "storageAccountName": "[parameters('storageAccounts_qryspihole_name')]",
+                            "storageAccountName": "[parameters('storageAccounts_pihole_name')]",
                             "storageAccountKey": "[listKeys(variables('storageAccountId'), '2019-04-01').keys[0].value]"
                         }
                     },
@@ -241,7 +252,7 @@
                         "azureFile": {
                             "shareName": "etc-dnsmasq",
                             "readOnly": false,
-                            "storageAccountName": "[parameters('storageAccounts_qryspihole_name')]",
+                            "storageAccountName": "[parameters('storageAccounts_pihole_name')]",
                             "storageAccountKey": "[listKeys(variables('storageAccountId'), '2019-04-01').keys[0].value]"
                         }
                     },
