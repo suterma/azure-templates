@@ -3,7 +3,7 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "storageAccounts_pihole_name": {
-            "defaultValue": "pihole-storage-account",
+            "defaultValue": "pihole",
             "type": "String",
             "metadata": {
                 "description": "The name of the storage account that will be created to contain the needed volumes"
@@ -25,10 +25,11 @@
          }
         },
         "pihole_container_WEBPASSWORD": {
-            "defaultValue": "PLEASE_CHANGE2",
+            "defaultValue": "",
+            "minLength": "12",
             "type": "securestring",
             "metadata": {
-                "description": "Password for the Pi-hole admin account. Keep note of it, you can not retrieve it later on."
+                "description": "Password for the Pi-hole admin account. At least 12 characters long. Keep note of it, you can not retrieve it later on."
             }
         }        
     },
